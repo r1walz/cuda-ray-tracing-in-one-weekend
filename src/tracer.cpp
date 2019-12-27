@@ -1,7 +1,19 @@
 #include <iostream>
 #include "include/ray.hpp"
 
+bool hit_sphere(const vec3 &center, float radius, const ray &r) {
+	vec3 oc = r.origin() - center;
+	float a = vec3::dot(r.direction(), r.direction());
+	float b = 2.0f * vec3::dot(oc, r.direction());
+	float c = vec3::dot(oc, oc) - radius * radius;
+	float discriminant = b * b - 4 * a * c;
+
+	return discriminant > 0;
+}
+
 vec3 color(const ray& r) {
+	if (hit_sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f, r))
+		return vec3(1.0f, 0.0f, 0.0f);
 	vec3 unit_direction = vec3::unit_vector(r.direction());
 	float t = 0.5f * (unit_direction.y() + 1.0f);
 
