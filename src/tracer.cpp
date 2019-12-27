@@ -1,15 +1,31 @@
 #include <iostream>
-#include "include/vec3.hpp"
+#include "include/ray.hpp"
+
+vec3 color(const ray& r) {
+	vec3 unit_direction = vec3::unit_vector(r.direction());
+	float t = 0.5f * (unit_direction.y() + 1.0f);
+
+	return (1.0f - t) * vec3(1.0f, 1.0f, 1.0f) + t * vec3(0.5f, 0.7f, 1.0f);
+}
 
 int main(void) {
 	int nx = 960;
 	int ny = 540;
 
+	vec3 origin;
+	vec3 vertical(0.0f, 18.0f, 0.0f);
+	vec3 horizontal(32.0f, 0.0f, 0.0f);
+	vec3 lower_left_corner(-16.0f, -9.0f, -9.0f);
+
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
 	for (int j = ny - 1; j >= 0; --j)
 		for (int i = 0; i < nx; ++i) {
-			vec3 col(float(i) / float(nx), float(j) / float(ny), 1.0f);
+			float u = float(i) / float(nx);
+			float v = float(j) / float(ny);
+			ray r(origin, lower_left_corner +
+				      u * horizontal + v * vertical);
+			vec3 col = color(r);
 			int ir = int(255.99 * col[0]);
 			int ig = int(255.99 * col[1]);
 			int ib = int(255.99 * col[2]);
