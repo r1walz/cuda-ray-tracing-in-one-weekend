@@ -15,7 +15,7 @@ Didactic ray tracing implementation using C++ adapted from [Ray Tracing in One W
 1. Clone the repository: $ git clone https://github.com/r1walz/ray-tracing-in-one-weekend.git
 2. cd ray-tracing-in-one-weekend
 3. make
-4. ./main >image.ppm
+4. ./tracer >image.ppm
 5. Open the `image.ppm` file using your favourite ppm image viewer
 ```
 
