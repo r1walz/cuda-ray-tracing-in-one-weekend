@@ -4,6 +4,7 @@
 #include <random>
 #include <functional>
 #include "hitable.hpp"
+#include "material.hpp"
 
 inline double random_double() {
 	static std::uniform_real_distribution<double> distrib(0.0, 1.0);
@@ -23,11 +24,20 @@ vec3 random_in_unit_sphere() {
 	return p;
 }
 
-vec3 color(const ray& r, hitable *world) {
+vec3 reflect(const vec3 &v, const vec3 &n) {
+	return v - 2 * vec3::dot(v, n) * n;
+}
+
+vec3 color(const ray& r, hitable *world, int depth) {
 	hit_record rec;
 	if (world->hit(r, 0.001f, MAXFLOAT, rec)) {
-		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		return 0.5f * color(ray(rec.p, target - rec.p), world);
+		ray scattered;
+		vec3 attenuation;
+
+		if (depth < 50 &&
+		    rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+			return attenuation * color(scattered, world, depth + 1);
+		return vec3();
 	}
 	vec3 unit_direction = vec3::unit_vector(r.direction());
 	float t = 0.5f * (unit_direction.y() + 1.0f);

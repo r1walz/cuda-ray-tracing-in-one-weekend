@@ -15,8 +15,17 @@ sphere.o: src/sphere.cpp src/include/sphere.hpp
 tracer_main.o: src/tracer.cpp
 	$(CC) $(CFLAGS) -c src/tracer.cpp
 
-tracer: tracer_main.o vec3.o hitablelist.o sphere.o
-	$(CC) $(CFLAGS) -o tracer tracer.o vec3.o sphere.o hitablelist.o
+lambertian.o: src/include/material.hpp src/lambertian.cpp
+	$(CC) $(CFLAGS) -c src/lambertian.cpp
+
+metal.o: src/include/material.hpp src/metal.cpp
+	$(CC) $(CFLAGS) -c src/metal.cpp
+
+materials: lambertian.o metal.o
+
+tracer: tracer_main.o vec3.o hitablelist.o sphere.o materials
+	$(CC) $(CFLAGS) -o tracer tracer.o vec3.o sphere.o hitablelist.o \
+	lambertian.o metal.o
 
 clean:
 	@if test -n "$(wildcard *.o)"; then \

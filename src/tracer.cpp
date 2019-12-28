@@ -2,6 +2,7 @@
 #include "include/util.hpp"
 #include "include/camera.hpp"
 #include "include/sphere.hpp"
+#include "include/material.hpp"
 #include "include/hitablelist.hpp"
 
 int main(void) {
@@ -14,10 +15,16 @@ int main(void) {
 	vec3 horizontal(32.0f, 0.0f, 0.0f);
 	vec3 lower_left_corner(-16.0f, -9.0f, -9.0f);
 
-	hitable *list[2];
-	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f);
-	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f), 100.0f);
-	hitable *world = new hitable_list(list, 2);
+	hitable *list[4];
+	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
+			     0.5f, new lambertian(vec3(0.8f, 0.3f, 0.3f)));
+	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
+			     100.0f, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
+	list[2] = new sphere(vec3(1.0f, 0.0f, -1.0f),
+			     0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.3f));
+	list[3] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
+			     0.5f, new metal(vec3(0.8f, 0.8f, 0.8f), 1.0f));
+	hitable *world = new hitable_list(list, 4);
 	camera cam;
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
@@ -29,7 +36,7 @@ int main(void) {
 				float u = float(i + random_double()) / float(nx);
 				float v = float(j + random_double()) / float(ny);
 				ray r = cam.get_ray(u, v);
-				col += color(r, world);
+				col += color(r, world, 0);
 			}
 			col /= float(ns);
 			col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
