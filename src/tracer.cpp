@@ -10,27 +10,16 @@ int main(void) {
 	int ny = 540;
 	int ns = 100;
 
-	vec3 lookfrom(3.0f, 3.0f, 2.0f);
-	vec3 lookat(0.0f, 0.0f, -1.0f);
+	vec3 lookfrom(13.0f, 2.0f, 3.0f);
+	vec3 lookat(0.0f, 0.0f, 0.0f);
 
-	float dist_to_focus = (lookfrom - lookat).length();
-	float aperture = 2.0f;
+	float dist_to_focus = 10.0f;
+	float aperture = 0.1f;
 
-	hitable *list[5];
-	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
-			     0.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)));
-	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
-			     100.0f, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
-	list[2] = new sphere(vec3(1.0f, 0.0f, -1.0f),
-			     0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.0f));
-	list[3] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
-			     0.5f, new dielectric(1.5));
-	list[4] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
-			     -0.45f, new dielectric(1.5));
-	hitable *world = new hitable_list(list, 5);
+	hitable *world = random_scene();
 	camera cam(lookfrom, lookat,
 		   vec3(0.0f, 1.0f, 0.0f),
-		   25, float(nx) / float(ny),
+		   20.0f, float(nx) / float(ny),
 		   aperture, dist_to_focus);
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";

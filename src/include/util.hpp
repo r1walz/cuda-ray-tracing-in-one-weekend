@@ -3,8 +3,10 @@
 
 #include <random>
 #include <functional>
+#include "sphere.hpp"
 #include "hitable.hpp"
 #include "material.hpp"
+#include "hitablelist.hpp"
 
 inline double random_double() {
 	static std::uniform_real_distribution<double> distrib(0.0, 1.0);
@@ -33,6 +35,45 @@ vec3 random_in_unit_sphere() {
 	} while (p.squared_length() >= 1.0f);
 
 	return p;
+}
+
+hitable *random_scene() {
+	int i = 1;
+	int n = 500;
+	hitable **list = new hitable*[n+1];
+	list[0] =  new sphere(vec3(0.0f, -1000.0f, 0.0f),
+			      1000.0f, new lambertian(vec3(0.5f, 0.5f, 0.5f)));
+
+	for (int a = -11; a < 11; a++)
+		for (int b = -11; b < 11; b++) {
+			float choose_mat = random_double();
+			vec3 center(a + 0.9f * random_double(),
+				    0.2f, b + 0.9f * random_double());
+			if ((center - vec3(4.0f, 0.2f, 0.0f)).length() > 0.9f) {
+				if (choose_mat < 0.8f)
+					list[i++] = new sphere( center, 0.2f,
+						new lambertian(vec3(random_double() * random_double(),
+								    random_double() * random_double(),
+								    random_double() * random_double())));
+				else if (choose_mat < 0.95f)
+					list[i++] = new sphere( center, 0.2f,
+							new metal(vec3(0.5 * (1.0 + random_double()),
+								       0.5 * (1.0 + random_double()),
+								       0.5 * (1.0 + random_double())),
+								  0.5 * random_double()));
+				else
+					list[i++] = new sphere(center, 0.2f, new dielectric(1.5));
+			}
+		}
+
+	list[i++] = new sphere(vec3(0.0f, 1.0f, 0.0f),
+			       1.0f, new dielectric(1.5));
+	list[i++] = new sphere(vec3(-4.0f, 1.0f, 0.0f),
+			       1.0f, new lambertian(vec3(0.4f, 0.2f, 0.1f)));
+	list[i++] = new sphere(vec3(4.0f, 1.0f, 0.0f),
+			       1.0f, new metal(vec3(0.7f, 0.6f, 0.5f), 0.0f));
+
+	return new hitable_list(list, i);
 }
 
 vec3 reflect(const vec3 &v, const vec3 &n) {
