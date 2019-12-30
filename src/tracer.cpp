@@ -27,7 +27,10 @@ int main(void) {
 	list[4] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
 			     -0.45f, new dielectric(1.5));
 	hitable *world = new hitable_list(list, 5);
-	camera cam;
+	camera cam(vec3(-2.0f, 2.0f, 1.0f),
+		   vec3(0.0f, 0.0f, -1.0f),
+		   vec3(0.0f, 1.0f, 0.0f),
+		   25, float(nx) / float(ny));
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 

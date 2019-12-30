@@ -3,6 +3,9 @@ CFLAGS=-Wall -Wextra -Wpedantic
 
 all: tracer
 
+camera.o: src/camera.cpp src/include/camera.hpp
+	$(CC) $(CFLAGS) -c src/camera.cpp
+
 vec3.o: src/vec3.cpp src/include/vec3.hpp
 	$(CC) $(CFLAGS) -c src/vec3.cpp
 
@@ -26,9 +29,9 @@ dielectric.o: src/include/material.hpp src/dielectric.cpp
 
 materials: lambertian.o metal.o dielectric.o
 
-tracer: tracer_main.o vec3.o hitablelist.o sphere.o materials
-	$(CC) $(CFLAGS) -o tracer tracer.o vec3.o sphere.o hitablelist.o \
-	lambertian.o metal.o dielectric.o
+tracer: tracer_main.o camera.o vec3.o hitablelist.o sphere.o materials
+	$(CC) $(CFLAGS) -o tracer tracer.o camera.o vec3.o sphere.o \
+	hitablelist.o lambertian.o metal.o dielectric.o
 
 clean:
 	@if test -n "$(wildcard *.o)"; then \
