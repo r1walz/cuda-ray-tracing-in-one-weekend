@@ -13,6 +13,17 @@ inline double random_double() {
 	return rng();
 }
 
+vec3 random_in_unit_disk() {
+	vec3 p;
+
+	do {
+		p = 2.0f * vec3(random_double(), random_double(), 0.0f)
+		    - vec3(1.0f, 1.0f, 0.0f);
+	} while (p.squared_length() >= 1.0f);
+
+	return p;
+}
+
 vec3 random_in_unit_sphere() {
 	vec3 p;
 

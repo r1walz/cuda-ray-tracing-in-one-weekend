@@ -10,10 +10,11 @@ int main(void) {
 	int ny = 540;
 	int ns = 100;
 
-	vec3 origin;
-	vec3 vertical(0.0f, 18.0f, 0.0f);
-	vec3 horizontal(32.0f, 0.0f, 0.0f);
-	vec3 lower_left_corner(-16.0f, -9.0f, -9.0f);
+	vec3 lookfrom(3.0f, 3.0f, 2.0f);
+	vec3 lookat(0.0f, 0.0f, -1.0f);
+
+	float dist_to_focus = (lookfrom - lookat).length();
+	float aperture = 2.0f;
 
 	hitable *list[5];
 	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
@@ -27,10 +28,10 @@ int main(void) {
 	list[4] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
 			     -0.45f, new dielectric(1.5));
 	hitable *world = new hitable_list(list, 5);
-	camera cam(vec3(-2.0f, 2.0f, 1.0f),
-		   vec3(0.0f, 0.0f, -1.0f),
+	camera cam(lookfrom, lookat,
 		   vec3(0.0f, 1.0f, 0.0f),
-		   25, float(nx) / float(ny));
+		   25, float(nx) / float(ny),
+		   aperture, dist_to_focus);
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
