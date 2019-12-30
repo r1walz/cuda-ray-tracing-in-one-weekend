@@ -5,6 +5,9 @@
 
 extern vec3 random_in_unit_sphere();
 extern vec3 reflect(const vec3&, const vec3&);
+extern bool refract(const vec3&, const vec3&, float, vec3&);
+extern float schlick(float, float);
+extern double random_double();
 
 class material {
 public:
@@ -29,6 +32,14 @@ public:
 			     vec3 &attenuation, ray &scattered) const;
 	vec3 albedo;
 	float fuzz;
+};
+
+class dielectric : public material {
+public:
+	dielectric(float ri) : ref_idx(ri) {}
+	virtual bool scatter(const ray &r, const hit_record &rec,
+			     vec3 &attenuation, ray &scattered) const;
+	float ref_idx;
 };
 
 #endif
