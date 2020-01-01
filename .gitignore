@@ -1,0 +1,6 @@
+*.o
+*.ppm
+.vscode
+
+build
+tracer
