@@ -1,4 +1,5 @@
 #include "include/util.hpp"
+#include "include/vec3.hpp"
 
 CUDA_GLOBAL
 void paint_pixel(int nx, int ny, float *output) {
@@ -10,8 +11,10 @@ void paint_pixel(int nx, int ny, float *output) {
 #else
 	for (int i = 0; i < nx * ny; ++i) {
 #endif
-		output[i * 3] = float(i / ny) / float(nx);
-		output[i * 3 + 1] = float(i % ny) / float(ny);
-		output[i * 3 + 2] = 1.0f;
+		vec3 col(float(i / ny) / float(nx),
+			 float(i % ny) / float(ny), 1.0f);
+		output[i * 3] = col[0];
+		output[i * 3 + 1] = col[1];
+		output[i * 3 + 2] = col[2];
 	}
 }
