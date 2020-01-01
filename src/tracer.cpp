@@ -7,16 +7,39 @@ int main(void) {
 	int ny = 540;
 	float *output = new float[nx * ny * 3];
 
+	vec3 origin;
+	vec3 vertical(0.0f, 18.0f, 0.0f);
+	vec3 horizontal(32.0f, 0.0f, 0.0f);
+	vec3 lower_left_corner(-16.0f, -9.0f, -9.0f);
+
 #ifdef __CUDACC__
 	float *doutput;
 	int num_blocks = 4096;
 	int block_size = 256;
+
+	vec3 *dorigin, *dvert, *dhori, *dllc;
+	cudaMalloc((void **)&dorigin, sizeof(vec3));
+	cudaMalloc((void **)&dvert, sizeof(vec3));
+	cudaMalloc((void **)&dhori, sizeof(vec3));
+	cudaMalloc((void **)&dllc, sizeof(vec3));
+
+	cudaMemcpy((void *)dorigin, (void *)&origin,
+		   sizeof(vec3), cudaMemcpyHostToDevice);
+	cudaMemcpy((void *)dvert, (void *)&vertical,
+		   sizeof(vec3), cudaMemcpyHostToDevice);
+	cudaMemcpy((void *)dhori, (void *)&horizontal,
+		   sizeof(vec3), cudaMemcpyHostToDevice);
+	cudaMemcpy((void *)dllc, (void *)&lower_left_corner,
+		   sizeof(vec3), cudaMemcpyHostToDevice);
+
 	cudaMalloc((void **)&doutput, nx * ny * 3 * sizeof(float));
-	paint_pixel<<<num_blocks, block_size>>>(nx, ny, doutput);
+	paint_pixel<<<num_blocks, block_size>>>(nx, ny, dorigin,
+		   dvert, dhori, dllc, doutput);
 	cudaMemcpy((void *)output, (void *)doutput,
 		   nx * ny * 3 * sizeof(float), cudaMemcpyDeviceToHost);
 #else
-	paint_pixel(nx, ny, output);
+	paint_pixel(nx, ny, &origin, &vertical, &horizontal,
+		    &lower_left_corner, output);
 #endif
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
@@ -30,6 +53,10 @@ int main(void) {
 	delete [] output;
 #ifdef __CUDACC__
 	cudaFree(doutput);
+	cudaFree(dorigin);
+	cudaFree(dvert);
+	cudaFree(dhori);
+	cudaFree(dllc);
 	cudaDeviceReset();
 #endif
 
