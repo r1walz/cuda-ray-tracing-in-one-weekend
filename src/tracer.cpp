@@ -8,55 +8,37 @@ int main(void) {
 	int ns = 100;
 	float *output = new float[nx * ny * ns * 3];
 
-	vec3 lookfrom(3.0f, 3.0f, 2.0f);
-	vec3 lookat(0.0f, 0.0f, -1.0f);
-
-	float aperture = 2.0f;
-	float dist_to_focus = (lookfrom - lookat).length();
+	float aperture = 0.1f;
+	float dist_to_focus = 10.0f;
 
 	camera **dcam;
-	hittable **dlist;
 	hittable **dworld;
 
 #ifdef __CUDACC__
 	float *doutput;
 	int num_blocks = 4096;
 	int block_size = 256;
-	curandState *rand;
+	curandState *rand, *drand;
 
-	cudaMalloc((void **)&dlist, 2 * sizeof(hittable *));
 	cudaMalloc((void **)&dworld, sizeof(hittable *));
 	cudaMalloc((void **)&dcam, sizeof(camera *));
 	cudaMalloc((void **)&rand, nx * ny * sizeof(curandState));
+	cudaMalloc((void **)&drand, sizeof(curandState));
 	cudaMalloc((void **)&doutput, nx * ny * ns * 3 * sizeof(float));
 
+	init_random_item<<<1, 1>>>(drand);
 	initiate_world<<<1, 1>>>(nx, ny, aperture, dist_to_focus,
-				 dlist, dworld, dcam);
+				 dworld, dcam, drand);
 	init_random<<<num_blocks, block_size>>>(nx, ny, rand);
 	paint_pixel<<<num_blocks, block_size>>>(nx, ny, ns, dcam, dworld, rand, doutput);
 
 	cudaMemcpy((void *)output, (void *)doutput,
 		   nx * ny * ns * 3 * sizeof(float), cudaMemcpyDeviceToHost);
 #else
-	dlist = new hittable*[5];
-	dlist[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
-			     0.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)));
-	dlist[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
-			     100.0f, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
-	dlist[2] = new sphere(vec3(1.0f, 0.0f, -1.0f),
-			     0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.0f));
-	dlist[3] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
-			     0.5f, new dielectric(1.5));
-	dlist[4] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
-			      -0.45f, new dielectric(1.5));
 	dworld = new hittable*[1];
-	*dworld = new hittable_list(dlist, 5);
 	dcam = new camera*[1];
-	*dcam = new camera(lookfrom, lookat,
-			   vec3(0.0f, 1.0f, 0.0f),
-			   25.0f, float(nx) / float(ny),
-			   aperture, dist_to_focus);
-
+	initiate_world(nx, ny, aperture, dist_to_focus,
+		       dworld, dcam);
 	paint_pixel(nx, ny, ns, dcam, dworld, output);
 #endif
 
@@ -79,13 +61,11 @@ int main(void) {
 	delete [] output;
 #ifdef __CUDACC__
 	cudaFree(doutput);
-	cudaFree(dlist);
 	cudaFree(dcam);
 	cudaFree(dworld);
 	cudaFree(rand);
 	cudaDeviceReset();
 #else
-	delete [] dlist;
 	delete [] *dcam;
 	delete [] dcam;
 	delete [] *dworld;

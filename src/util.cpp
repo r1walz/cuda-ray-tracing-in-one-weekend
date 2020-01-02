@@ -2,22 +2,79 @@
 
 CUDA_GLOBAL
 void initiate_world(int nx, int ny, float aperture, float dist_to_focus,
-		    hittable **list, hittable **world, camera **cam) {
-	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
-			     0.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)));
-	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
-			     100.0f, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
-	list[2] = new sphere(vec3(1.0f, 0.0f, -1.0f),
-			     0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.0f));
-	list[3] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
-			     0.5f, new dielectric(1.5));
-	list[4] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
-			      -0.45f, new dielectric(1.5));
-	*world = new hittable_list(list, 5);
-	*cam = new camera(vec3(3.0f, 3.0f, 2.0f),
-			  vec3(0.0f, 0.0f, -1.0f),
+		    hittable **world, camera **cam
+#ifdef __CUDACC__
+		    , curandState *rand
+#endif
+		    ) {
+#ifdef __CUDACC__
+	curandState drand = *rand;
+#endif
+	int i = 0;
+	hittable **list = new hittable*[22 * 22 + 4];
+	list[i++] = new sphere(vec3(0.0f, -1000.0f, 0.0f), 1000.0f,
+			new lambertian(vec3(0.5f, 0.5f, 0.5f)));
+
+	for (int a = -11; a < 11; ++a)
+	for (int b = -11; b < 11; ++b) {
+		float choose =
+#ifdef __CUDACC__
+			       curand_uniform(&drand);
+		vec3 center(a * curand_uniform(&drand), 0.2f, b * curand_uniform(&drand));
+		if ((center - vec3(4.0f, 0.2f, 0.0f)).length() > 0.9f) {
+			if (choose < 0.8f)
+				list[i++] = new sphere(center, 0.2f,
+						new lambertian(vec3(curand_uniform(&drand)
+							       * curand_uniform(&drand),
+							       curand_uniform(&drand)
+							       * curand_uniform(&drand),
+							       curand_uniform(&drand))
+							       * curand_uniform(&drand)));
+			else if (choose < 0.95f)
+				list[i++] = new sphere(center, 0.2f,
+						new metal(vec3(0.5f * (1.0f + curand_uniform(&drand)),
+							       0.5f * (1.0f + curand_uniform(&drand)),
+							       0.5f * (1.0f + curand_uniform(&drand))),
+							  0.5f * curand_uniform(&drand)));
+			else
+				list[i++] = new sphere(center, 0.2f, new dielectric(1.5));
+		}
+#else
+			       random_double();
+		vec3 center(a * random_double(), 0.2f, b * random_double());
+		if ((center - vec3(4.0f, 0.2f, 0.0f)).length() > 0.9f) {
+			if (choose < 0.8f)
+				list[i++] = new sphere(center, 0.2f,
+						new lambertian(vec3(random_double()
+							       * random_double(),
+							       random_double()
+							       * random_double(),
+							       random_double())
+							       * random_double()));
+			else if (choose < 0.95f)
+				list[i++] = new sphere(center, 0.2f,
+						new metal(vec3(0.5f * (1.0f + random_double()),
+							       0.5f * (1.0f + random_double()),
+							       0.5f * (1.0f + random_double())),
+							  0.5f * random_double()));
+			else
+				list[i++] = new sphere(center, 0.2f, new dielectric(1.5));
+		}
+#endif
+	}
+
+	list[i++] = new sphere(vec3(0.0f, 1.0f, 0.0f),
+			       1.0f, new dielectric(1.5));
+	list[i++] = new sphere(vec3(-4.0f, 1.0f, 0.0f),
+			       1.0f, new lambertian(vec3(0.4f, 0.2f, 0.1f)));
+	list[i++] = new sphere(vec3(4.0f, 1.0f, 0.0f),
+			       1.0f, new metal(vec3(0.7f, 0.6f, 0.5f), 0.0f));
+
+	*world = new hittable_list(list, i);
+	*cam = new camera(vec3(13.0f, 2.0f, 3.0f),
+			  vec3(0.0f, 0.0f, 0.0f),
 			  vec3(0.0f, 1.0f, 0.0f),
-			  25.0f, float(nx) / float(ny),
+			  20.0f, float(nx) / float(ny),
 			  aperture, dist_to_focus);
 }
 
@@ -130,6 +187,11 @@ vec3 random_in_unit_sphere(curandState *rand) {
 	} while (p.squared_length() >= 1.0f);
 
 	return p;
+}
+
+CUDA_GLOBAL
+void init_random_item(curandState *rand) {
+	curand_init(1999, 0, 0, rand);
 }
 
 CUDA_GLOBAL
