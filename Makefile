@@ -30,14 +30,17 @@ lambertian.o: src/lambertian.cpp
 metal.o: src/metal.cpp
 	$(CC) $(CFLAGS) src/metal.cpp
 
-materials: lambertian.o metal.o
+dielectric.o: src/dielectric.cpp
+	$(CC) $(CFLAGS) src/dielectric.cpp
+
+materials: lambertian.o metal.o dielectric.o
 
 tracer.o: src/tracer.cpp
 	$(CC) $(CFLAGS) src/tracer.cpp
 
 tracer: tracer.o util.o vec3.o camera.o hittables materials
 	$(CC) -o tracer tracer.o util.o vec3.o camera.o hittable_list.o \
-	sphere.o lambertian.o metal.o
+	sphere.o lambertian.o metal.o dielectric.o
 
 clean:
 	@if test -n "$(wildcard *.o)"; then \
