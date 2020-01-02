@@ -2,9 +2,15 @@
 
 CUDA_GLOBAL
 void initiate_world(hittable **list, hittable **world, camera **cam) {
-	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f);
-	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f), 100.0f);
-	*world = new hittable_list(list, 2);
+	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
+			     0.5f, new lambertian(vec3(0.8f, 0.3f, 0.3f)));
+	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
+			     100.0f, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
+	list[2] = new sphere(vec3(1.0f, 0.0f, -1.0f),
+			     0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.3f));
+	list[3] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
+			     0.5f, new metal(vec3(0.8f, 0.8f, 0.8f), 1.0f));
+	*world = new hittable_list(list, 4);
 	*cam = new camera();
 }
 
@@ -28,18 +34,31 @@ vec3 random_in_unit_sphere() {
 	return p;
 }
 
+CUDA_DEVICE
+vec3 reflect(const vec3 &v, const vec3 &n) {
+	return v - 2 * vec3::dot(v, n) * n;
+}
+
+
 #ifdef __CUDACC__
 CUDA_DEVICE
 vec3 color(const ray& r, hittable *world, curandState *rand) {
 	ray _ray = r;
-	float _attenuation = 1.0f;
+	vec3 _attenuation = vec3(1.0f, 1.0f, 1.0f);
 
 	for (int i = 0; i < 50; ++i) {
 		hit_record rec;
 		if (world->hit(_ray, 0.001f, MAXFLOAT, rec)) {
-			vec3 target = rec.p + rec.normal + random_in_unit_sphere(rand);
-			_attenuation *= 0.5f;
-			_ray = ray(rec.p, target - rec.p);
+			ray scattered;
+			vec3 attenuation;
+
+			if (rec.mat_ptr->scatter(_ray, rec, attenuation,
+						 scattered, rand)) {
+				_attenuation *= attenuation;
+				_ray = scattered;
+
+			} else
+				return vec3();
 		} else {
 			vec3 unit_direction = vec3::unit_vector(_ray.direction());
 			float t = 0.5f * (unit_direction.y() + 1.0f);
@@ -92,14 +111,21 @@ void paint_pixel(int nx, int ny, int ns, camera **cam,
 CUDA_HOST
 vec3 color(const ray& r, hittable *world) {
 	ray _ray = r;
-	float _attenuation = 1.0f;
+	vec3 _attenuation = vec3(1.0f, 1.0f, 1.0f);
 
 	for (int i = 0; i < 50; ++i) {
 		hit_record rec;
 		if (world->hit(_ray, 0.001f, MAXFLOAT, rec)) {
-			vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-			_attenuation *= 0.5f;
-			_ray = ray(rec.p, target - rec.p);
+			ray scattered;
+			vec3 attenuation;
+
+			if (rec.mat_ptr->scatter(_ray, rec, attenuation,
+						 scattered)) {
+				_attenuation *= attenuation;
+				_ray = scattered;
+
+			} else
+				return vec3();
 		} else {
 			vec3 unit_direction = vec3::unit_vector(_ray.direction());
 			float t = 0.5f * (unit_direction.y() + 1.0f);

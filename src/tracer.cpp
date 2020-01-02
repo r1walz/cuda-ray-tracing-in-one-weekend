@@ -31,11 +31,17 @@ int main(void) {
 	cudaMemcpy((void *)output, (void *)doutput,
 		   nx * ny * ns * 3 * sizeof(float), cudaMemcpyDeviceToHost);
 #else
-	dlist = new hittable*[2];
-	dlist[0] = new sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f);
-	dlist[1] = new sphere(vec3(0.0f, -100.5f, -1.0f), 100.0f);
+	dlist = new hittable*[4];
+	dlist[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
+			     0.5f, new lambertian(vec3(0.8f, 0.3f, 0.3f)));
+	dlist[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
+			     100.0f, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
+	dlist[2] = new sphere(vec3(1.0f, 0.0f, -1.0f),
+			     0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.3f));
+	dlist[3] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
+			     0.5f, new metal(vec3(0.8f, 0.8f, 0.8f), 1.0f));
 	dworld = new hittable*[1];
-	*dworld = new hittable_list(dlist, 2);
+	*dworld = new hittable_list(dlist, 4);
 	dcam = new camera*[1];
 	*dcam = new camera();
 
@@ -67,8 +73,6 @@ int main(void) {
 	cudaFree(rand);
 	cudaDeviceReset();
 #else
-	delete dlist[0];
-	delete dlist[1];
 	delete [] dlist;
 	delete [] *dcam;
 	delete [] dcam;

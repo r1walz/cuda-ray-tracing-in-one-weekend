@@ -24,11 +24,20 @@ sphere.o: src/sphere.cpp src/include/sphere.hpp
 
 hittables: hittable_list.o sphere.o
 
+lambertian.o: src/lambertian.cpp
+	$(CC) $(CFLAGS) src/lambertian.cpp
+
+metal.o: src/metal.cpp
+	$(CC) $(CFLAGS) src/metal.cpp
+
+materials: lambertian.o metal.o
+
 tracer.o: src/tracer.cpp
 	$(CC) $(CFLAGS) src/tracer.cpp
 
-tracer: tracer.o util.o vec3.o camera.o hittables
-	$(CC) -o tracer tracer.o util.o vec3.o camera.o hittable_list.o sphere.o
+tracer: tracer.o util.o vec3.o camera.o hittables materials
+	$(CC) -o tracer tracer.o util.o vec3.o camera.o hittable_list.o \
+	sphere.o lambertian.o metal.o
 
 clean:
 	@if test -n "$(wildcard *.o)"; then \
