@@ -54,9 +54,9 @@ int main(void) {
 
 	for (int j = ny - 1; j >= 0; --j)
 	for (int i = 0; i < nx; ++i)
-		std::cout << int(255.99 * output[i * ny * ns * 3 + j * ns * 3]) / ns << " "
-			  << int(255.99 * output[i * ny * ns * 3 + j * ns * 3 + 1]) / ns << " "
-			  << int(255.99 * output[i * ny * ns * 3 + j * ns * 3 + 2]) / ns << '\n';
+		std::cout << int(255.99 * sqrt(output[i * ny * ns * 3 + j * ns * 3] / ns)) << " "
+			  << int(255.99 * sqrt(output[i * ny * ns * 3 + j * ns * 3 + 1] / ns)) << " "
+			  << int(255.99 * sqrt(output[i * ny * ns * 3 + j * ns * 3 + 2] / ns)) << '\n';
 
 	delete [] output;
 #ifdef __CUDACC__
