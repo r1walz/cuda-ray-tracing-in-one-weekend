@@ -13,6 +13,9 @@ util.o: src/util.cpp src/include/util.hpp
 vec3.o: src/vec3.cpp src/include/vec3.hpp
 	$(CC) $(CFLAGS) src/vec3.cpp
 
+camera.o: src/camera.cpp src/include/camera.hpp
+	$(CC) $(CFLAGS) src/camera.cpp
+
 hittable_list.o: src/hittable_list.cpp src/include/hittable_list.hpp
 	$(CC) $(CFLAGS) src/hittable_list.cpp
 
@@ -24,8 +27,8 @@ hittables: hittable_list.o sphere.o
 tracer.o: src/tracer.cpp
 	$(CC) $(CFLAGS) src/tracer.cpp
 
-tracer: tracer.o util.o vec3.o hittables
-	$(CC) -o tracer tracer.o util.o vec3.o hittable_list.o sphere.o
+tracer: tracer.o util.o vec3.o camera.o hittables
+	$(CC) -o tracer tracer.o util.o vec3.o camera.o hittable_list.o sphere.o
 
 clean:
 	@if test -n "$(wildcard *.o)"; then \

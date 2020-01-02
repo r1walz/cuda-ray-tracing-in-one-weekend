@@ -1,10 +1,11 @@
 #include "include/util.hpp"
 
 CUDA_GLOBAL
-void initiate_world(hittable **list, hittable **world) {
+void initiate_world(hittable **list, hittable **world, camera **cam) {
 	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f);
 	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f), 100.0f);
 	*world = new hittable_list(list, 2);
+	*cam = new camera();
 }
 
 CUDA_DEVICE
@@ -20,25 +21,55 @@ vec3 color(const ray& r, hittable *world) {
 	return (1.0f - t) * vec3(1.0f, 1.0f, 1.0f) + t * vec3(0.5f, 0.7f, 1.0f);
 }
 
-CUDA_GLOBAL
-void paint_pixel(int nx, int ny, const vec3 *origin, const vec3 *vertical,
-		 const vec3 *horizontal, const vec3 *lower_left_corner,
-		 hittable **world, float *output) {
+CUDA_HOST
+double random_double() {
+	static std::uniform_real_distribution<double> distrib(0.0, 1.0);
+	static std::mt19937 gen;
+	static std::function<double()> rng = std::bind(distrib, gen);
+	return rng();
+}
+
 #ifdef __CUDACC__
+CUDA_GLOBAL
+void init_random(int nx, int ny, curandState *rand) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
-	for (int i = idx; i < nx * ny; i += stride) {
-#else
-	for (int i = 0; i < nx * ny; ++i) {
+	for (int i = idx; i < nx * ny; i += stride)
+		curand_init(1999 + i, 0, 0, &rand[i]);
+}
 #endif
-		float u = float(i / ny) / float(nx);
-		float v = float(i % ny) / float(ny);
-		ray r(*origin, *lower_left_corner
-			       + u * *horizontal + v * *vertical);
+
+CUDA_GLOBAL
+void paint_pixel(int nx, int ny, int ns, camera **cam,
+		 hittable **world, float *output) {
+	for (int i = 0; i < nx * ny * ns; ++i) {
+		float u = float(i) / float(nx * ny * ns);
+		float v = float((i % (ny * ns))) / float(ny * ns);
+		ray r((*cam)->get_ray(u, v));
 		vec3 col = color(r, *world);
-		output[i * 3] = col[0];
+		output[i * 3 ] = col[0];
 		output[i * 3 + 1] = col[1];
 		output[i * 3 + 2] = col[2];
 	}
 }
+
+#ifdef __CUDACC__
+CUDA_GLOBAL
+void paint_pixel(int nx, int ny, int ns, camera **cam,
+		 hittable **world, curandState *rand, float *output) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = idx; i < nx * ny * ns; i += stride) {
+		curandState drand = rand[i / ns];
+		float u = float(i + curand_uniform(&drand)) / float(nx * ny * ns);
+		float v = float((i % (ny * ns)) + curand_uniform(&drand)) / float(ny * ns);
+		ray r((*cam)->get_ray(u, v));
+		vec3 col = color(r, *world);
+		output[i * 3 ] = col[0];
+		output[i * 3 + 1] = col[1];
+		output[i * 3 + 2] = col[2];
+	}
+}
+#endif
