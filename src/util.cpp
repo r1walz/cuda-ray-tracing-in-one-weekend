@@ -1,8 +1,8 @@
 #include "include/util.hpp"
 
 CUDA_GLOBAL
-void initiate_world(int nx, int ny, hittable **list, hittable **world,
-		    camera **cam) {
+void initiate_world(int nx, int ny, float aperture, float dist_to_focus,
+		    hittable **list, hittable **world, camera **cam) {
 	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
 			     0.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)));
 	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
@@ -14,10 +14,11 @@ void initiate_world(int nx, int ny, hittable **list, hittable **world,
 	list[4] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
 			      -0.45f, new dielectric(1.5));
 	*world = new hittable_list(list, 5);
-	*cam = new camera(vec3(-2.0f, 2.0f, 1.0f),
+	*cam = new camera(vec3(3.0f, 3.0f, 2.0f),
 			  vec3(0.0f, 0.0f, -1.0f),
 			  vec3(0.0f, 1.0f, 0.0f),
-			  25.0f, float(nx) / float(ny));
+			  25.0f, float(nx) / float(ny),
+			  aperture, dist_to_focus);
 }
 
 CUDA_HOST
@@ -26,6 +27,18 @@ double random_double() {
 	static std::mt19937 gen;
 	static std::function<double()> rng = std::bind(distrib, gen);
 	return rng();
+}
+
+CUDA_HOST
+vec3 random_in_unit_disk() {
+	vec3 p;
+
+	do {
+		p = 2.0f * vec3(random_double(), random_double(),
+		    0.0f) - vec3(1.0f, 1.0f, 0.0f);
+	} while (p.squared_length() >= 1.0f);
+
+	return p;
 }
 
 CUDA_HOST
@@ -96,6 +109,18 @@ vec3 color(const ray& r, hittable *world, curandState *rand) {
 }
 
 CUDA_DEVICE
+vec3 random_in_unit_disk(curandState *rand) {
+	vec3 p;
+
+	do {
+		p = 2.0f * vec3(curand_uniform(rand), curand_uniform(rand),
+		    0.0f) - vec3(1.0f, 1.0f, 0.0f);
+	} while (p.squared_length() >= 1.0f);
+
+	return p;
+}
+
+CUDA_DEVICE
 vec3 random_in_unit_sphere(curandState *rand) {
 	vec3 p;
 
@@ -126,7 +151,7 @@ void paint_pixel(int nx, int ny, int ns, camera **cam,
 		curandState drand = rand[i % (nx * ny)];
 		float u = float(i + curand_uniform(&drand)) / float(nx * ny * ns);
 		float v = float((i % (ny * ns)) + curand_uniform(&drand)) / float(ny * ns);
-		ray r((*cam)->get_ray(u, v));
+		ray r((*cam)->get_ray(u, v, &drand));
 		vec3 col = color(r, *world, &drand);
 		output[i * 3 ] = col[0];
 		output[i * 3 + 1] = col[1];
