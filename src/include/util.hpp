@@ -28,7 +28,8 @@ CUDA_DEVICE bool refract(const vec3 &v, const vec3 &n,
 			 float ni_over_nt, vec3 &refracted);
 CUDA_DEVICE float schlick(float cosine, float ref_idx);
 
-CUDA_GLOBAL void initiate_world(hittable **list, hittable **world, camera **cam);
+CUDA_GLOBAL void initiate_world(int nx, int ny, hittable **list,
+				hittable **world, camera **cam);
 CUDA_GLOBAL void paint_pixel(int nx, int ny, int ns, camera **cam,
 			     hittable **world, float *output);
 

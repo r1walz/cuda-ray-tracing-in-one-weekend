@@ -5,7 +5,7 @@
 int main(void) {
 	int nx = 960;
 	int ny = 540;
-	int ns = 100;
+	int ns = 1;
 	float *output = new float[nx * ny * ns * 3];
 
 	camera **dcam;
@@ -24,7 +24,7 @@ int main(void) {
 	cudaMalloc((void **)&rand, nx * ny * sizeof(curandState));
 	cudaMalloc((void **)&doutput, nx * ny * ns * 3 * sizeof(float));
 
-	initiate_world<<<1, 1>>>(dlist, dworld, dcam);
+	initiate_world<<<1, 1>>>(nx, ny, dlist, dworld, dcam);
 	init_random<<<num_blocks, block_size>>>(nx, ny, rand);
 	paint_pixel<<<num_blocks, block_size>>>(nx, ny, ns, dcam, dworld, rand, doutput);
 
@@ -45,7 +45,10 @@ int main(void) {
 	dworld = new hittable*[1];
 	*dworld = new hittable_list(dlist, 5);
 	dcam = new camera*[1];
-	*dcam = new camera();
+	*dcam = new camera(vec3(-2.0f, 2.0f, 1.0f),
+			   vec3(0.0f, 0.0f, -1.0f),
+			   vec3(0.0f, 1.0f, 0.0f),
+			   25.0f, float(nx) / float(ny));
 
 	paint_pixel(nx, ny, ns, dcam, dworld, output);
 #endif

@@ -1,7 +1,8 @@
 #include "include/util.hpp"
 
 CUDA_GLOBAL
-void initiate_world(hittable **list, hittable **world, camera **cam) {
+void initiate_world(int nx, int ny, hittable **list, hittable **world,
+		    camera **cam) {
 	list[0] = new sphere(vec3(0.0f, 0.0f, -1.0f),
 			     0.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)));
 	list[1] = new sphere(vec3(0.0f, -100.5f, -1.0f),
@@ -11,8 +12,12 @@ void initiate_world(hittable **list, hittable **world, camera **cam) {
 	list[3] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
 			     0.5f, new dielectric(1.5));
 	list[4] = new sphere(vec3(-1.0f, 0.0f, -1.0f),
-			      -0.45f, new dielectric(1.5));	*world = new hittable_list(list, 5);
-	*cam = new camera();
+			      -0.45f, new dielectric(1.5));
+	*world = new hittable_list(list, 5);
+	*cam = new camera(vec3(-2.0f, 2.0f, 1.0f),
+			  vec3(0.0f, 0.0f, -1.0f),
+			  vec3(0.0f, 1.0f, 0.0f),
+			  25.0f, float(nx) / float(ny));
 }
 
 CUDA_HOST
