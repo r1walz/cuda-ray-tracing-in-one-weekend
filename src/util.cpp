@@ -204,6 +204,22 @@ void init_random(int nx, int ny, curandState *rand) {
 }
 
 CUDA_GLOBAL
+void calculate_avg(int nx, int ny, int ns, float *output) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx % 3 || (idx / 3) % ns)
+		return;
+
+	int& i = idx;
+	if (i < nx * ny * ns)
+	for (int j = 1; j < ns; ++j) {
+		output[i * 3] += output[i * 3 + j * 3];
+		output[i * 3 + 1] += output[i * 3 + j * 3 + 1];
+		output[i * 3 + 2] += output[i * 3 + j * 3 + 2];
+	}
+}
+
+CUDA_GLOBAL
 void paint_pixel(int nx, int ny, int ns, camera **cam,
 		 hittable **world, curandState *rand, float *output) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;

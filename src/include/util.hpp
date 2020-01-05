@@ -18,6 +18,7 @@ CUDA_DEVICE vec3 color(const ray &r, hittable *world, curandState *rand);
 
 CUDA_GLOBAL void init_random_item(curandState *rand);
 CUDA_GLOBAL void init_random(int nx, int ny, curandState *rand);
+CUDA_GLOBAL void calculate_avg(int nx, int ny, int ns, float *output);
 CUDA_GLOBAL void paint_pixel(int nx, int ny, int ns, camera **cam,
 			     hittable **world, curandState *rand, float *output);
 #endif
